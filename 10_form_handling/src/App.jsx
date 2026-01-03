@@ -1,9 +1,15 @@
+// Import necessary React hooks
 import { useState, useEffect } from "react";
 import "./App.css";
 
+// Main App component that manages all form demos
 function App() {
+  // State to track which demo is currently active/visible
+  // State to track which demo is currently active/visible
   const [activeDemo, setActiveDemo] = useState(1);
 
+  // Array of all available demos with their configurations
+  // Each demo has an id, name, and component to render
   const demos = [
     { id: 1, name: "🎯 Level 1: Basic Form", component: <BasicForm /> },
     {
@@ -36,11 +42,14 @@ function App() {
         <p>From Beginner to Advanced</p>
       </header>
 
+      {/* Navigation buttons for switching between demos */}
       <div className="demo-selector">
         {demos.map((demo) => (
           <button
             key={demo.id}
+            // Add 'active' class to highlight current demo
             className={activeDemo === demo.id ? "active" : ""}
+            // Update state to show selected demo
             onClick={() => setActiveDemo(demo.id)}
           >
             {demo.name}
@@ -48,7 +57,9 @@ function App() {
         ))}
       </div>
 
+      {/* Container for displaying the currently active demo */}
       <div className="demo-container">
+        {/* Find and render the component of the active demo */}
         {demos.find((demo) => demo.id === activeDemo)?.component}
       </div>
 
@@ -60,13 +71,22 @@ function App() {
 }
 
 // ===========================
-// LEVEL 1: BASIC FORM
+// LEVEL 1: BASIC FORM (Uncontrolled Component)
 // ===========================
+// This is an UNCONTROLLED form - the DOM manages the input values,
+// not React state. We only access values when needed (on submit).
 function BasicForm() {
+  // Handle form submission
   const handleSubmit = (e) => {
+    // CRITICAL: Prevent default form submission (which would reload the page)
     e.preventDefault();
+
+    // FormData API - a built-in way to get all form values
     const formData = new FormData(e.target);
+
+    // Get specific value by input's 'name' attribute
     const name = formData.get("name");
+
     alert(`Hello, ${name}! (Uncontrolled form)`);
   };
 
@@ -104,15 +124,23 @@ function BasicForm() {
 }
 
 // ===========================
-// LEVEL 2: CONTROLLED FORM
+// LEVEL 2: CONTROLLED FORM (Controlled Component)
 // ===========================
+// This is a CONTROLLED form - React state manages the input value.
+// Every keystroke updates the state, giving us full control.
 function ControlledForm() {
+  // State to store the input value
+  // This is the "single source of truth" for the input
   const [name, setName] = useState("");
 
   const handleSubmit = (e) => {
+    // Always prevent default to avoid page reload
     e.preventDefault();
+
     alert(`Hello, ${name}! (Controlled form)`);
-    setName(""); // Clear the input
+
+    // Reset the form by clearing state
+    setName("");
   };
 
   return (
@@ -128,7 +156,11 @@ function ControlledForm() {
           <label>Your Name:</label>
           <input
             type="text"
+            // value prop makes this a controlled component
+            // The input always shows what's in state
             value={name}
+            // onChange fires on every keystroke
+            // e.target.value gets the current input value
             onChange={(e) => setName(e.target.value)}
             placeholder="Type your name"
           />
@@ -159,9 +191,13 @@ function ControlledForm() {
 }
 
 // ===========================
-// LEVEL 3: MULTIPLE FIELDS
+// LEVEL 3: MULTIPLE FIELDS (Object State Pattern)
 // ===========================
+// When you have multiple related fields, use an object to store all values.
+// This is more efficient than creating separate state for each field.
 function MultiFieldForm() {
+  // Single state object holds all form fields
+  // Keys match the 'name' attributes of inputs
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -169,10 +205,17 @@ function MultiFieldForm() {
     age: "",
   });
 
+  // Generic handler that works for ALL inputs
   const handleChange = (e) => {
+    // Destructure name and value from the event target (the input)
     const { name, value } = e.target;
+
+    // Update state using functional form to avoid stale closures
     setFormData((prevData) => ({
+      // Spread operator (...) keeps all existing values
       ...prevData,
+      // Computed property [name] updates only the specific field
+      // e.g., if name="email", this updates formData.email
       [name]: value,
     }));
   };
@@ -260,59 +303,72 @@ function MultiFieldForm() {
 }
 
 // ===========================
-// LEVEL 4: VALIDATION
+// LEVEL 4: VALIDATION (Error Handling Pattern)
 // ===========================
+// This demo shows how to validate form data and display errors.
+// Uses separate state for form data and errors.
 function ValidatedForm() {
+  // State for form values
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
   });
 
+  // Separate state for validation errors
+  // Each key corresponds to a form field
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // Update the form data
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error when user starts typing
+    // Clear error when user starts typing (good UX practice)
+    // This gives instant feedback that they're fixing the issue
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
+  // Validation function - returns an object with errors
   const validate = () => {
     const newErrors = {};
 
-    // Email validation
+    // Email validation - check if empty first, then format
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      // Regex pattern to check basic email format
       newErrors.email = "Email is invalid";
     }
 
-    // Password validation
+    // Password validation - check presence and length
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    // Confirm password
+    // Confirm password - must match the password field
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
+    // Return the errors object (empty if no errors)
     return newErrors;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Run all validations
     const validationErrors = validate();
 
+    // If there are any errors, set them and stop submission
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      return;
+      return; // Stop here - don't submit
     }
 
     alert("✅ Registration successful!");
@@ -390,33 +446,45 @@ function ValidatedForm() {
 }
 
 // ===========================
-// LEVEL 5: COMPLEX FORM
+// LEVEL 5: COMPLEX FORMS with Multiple Data Types
 // ===========================
+// This shows how to handle DIFFERENT input types in one form:
+// text, email, select, radio, checkbox (single & multiple), textarea, date
 function ComplexForm() {
+  // State with different data types for different inputs
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    country: "USA",
-    gender: "",
-    hobbies: [],
-    newsletter: false,
-    bio: "",
-    birthDate: "",
+    name: "", // string - text input
+    email: "", // string - email input
+    country: "USA", // string - select dropdown (default value)
+    gender: "", // string - radio button
+    hobbies: [], // array - multiple checkboxes
+    newsletter: false, // boolean - single checkbox
+    bio: "", // string - textarea
+    birthDate: "", // string - date input
   });
 
+  // Smart handler that works for ALL input types
   const handleChange = (e) => {
+    // Get all relevant properties from the input element
     const { name, value, type, checked } = e.target;
 
+    // CHECKBOX ARRAY (multiple selection like hobbies)
     if (type === "checkbox" && name === "hobbies") {
       setFormData((prev) => ({
         ...prev,
         hobbies: checked
-          ? [...prev.hobbies, value]
-          : prev.hobbies.filter((h) => h !== value),
+          ? [...prev.hobbies, value] // Add to array if checked
+          : prev.hobbies.filter((h) => h !== value), // Remove if unchecked
       }));
-    } else if (type === "checkbox") {
+    }
+    // SINGLE CHECKBOX (boolean like newsletter subscription)
+    else if (type === "checkbox") {
+      // Use 'checked' property, not 'value'
       setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else {
+    }
+    // ALL OTHER INPUTS (text, select, radio, textarea, date)
+    else {
+      // Use 'value' property
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -588,44 +656,63 @@ function ComplexForm() {
 }
 
 // ===========================
-// LEVEL 6: CUSTOM HOOK
+// LEVEL 6: CUSTOM HOOK (Reusable Form Logic)
 // ===========================
+// Custom hooks let you extract and reuse stateful logic.
+// This hook can be used in ANY form component!
 function useForm(initialValues) {
+  // State for form field values
   const [values, setValues] = useState(initialValues);
+
+  // State for validation errors
   const [errors, setErrors] = useState({});
+
+  // State to track which fields user has interacted with
+  // Used to show errors only after user leaves a field (better UX)
   const [touched, setTouched] = useState({});
 
+  // Generic change handler
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setValues((prev) => ({
       ...prev,
+      // Use 'checked' for checkboxes, 'value' for everything else
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  // Blur handler - called when user leaves a field
   const handleBlur = (e) => {
     const { name } = e.target;
+    // Mark this field as "touched" so we can show errors
     setTouched((prev) => ({ ...prev, [name]: true }));
   };
 
+  // Reset all form state to initial values
   const resetForm = () => {
     setValues(initialValues);
     setErrors({});
     setTouched({});
   };
 
+  // Return everything the form component needs
   return {
-    values,
-    errors,
-    touched,
-    handleChange,
-    handleBlur,
-    setErrors,
-    resetForm,
+    values, // Current form values
+    errors, // Validation errors
+    touched, // Fields user has interacted with
+    handleChange, // Handler for input changes
+    handleBlur, // Handler for leaving a field
+    setErrors, // Function to set errors from validation
+    resetForm, // Function to clear the form
   };
 }
 
+// ===========================
+// Using the Custom Hook in a Component
+// ===========================
 function CustomHookDemo() {
+  // Destructure all the form logic from our custom hook
+  // No need to write this logic again - it's reusable!
   const {
     values,
     errors,
@@ -717,24 +804,39 @@ function CustomHookDemo() {
 }
 
 // ===========================
-// LEVEL 7: DEBOUNCED SEARCH
+// LEVEL 7: DEBOUNCED SEARCH (Performance Pattern)
 // ===========================
+// Debouncing prevents making API calls on every keystroke.
+// Instead, it waits until user stops typing for 500ms.
 function SearchForm() {
+  // Immediate value - updates on every keystroke
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounced value - updates after user stops typing
   const [debouncedTerm, setDebouncedTerm] = useState("");
+
+  // Mock search results
   const [results, setResults] = useState([]);
 
+  // Effect to debounce the search term
   useEffect(() => {
+    // Set a timer to update debouncedTerm after 500ms
     const timer = setTimeout(() => {
       setDebouncedTerm(searchTerm);
     }, 500);
 
+    // Cleanup function: if searchTerm changes before 500ms,
+    // cancel the previous timer and start a new one
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm]); // Run this effect whenever searchTerm changes
 
+  // Effect to perform search when debounced term changes
   useEffect(() => {
     if (debouncedTerm) {
-      // Simulate API call
+      // This is where you'd make your API call
+      // It only runs when user stops typing!
+
+      // Simulated API call with mock data
       const mockResults = [
         `Result 1 for "${debouncedTerm}"`,
         `Result 2 for "${debouncedTerm}"`,
@@ -743,9 +845,9 @@ function SearchForm() {
       setResults(mockResults);
       console.log("Searching for:", debouncedTerm);
     } else {
-      setResults([]);
+      setResults([]); // Clear results if search is empty
     }
-  }, [debouncedTerm]);
+  }, [debouncedTerm]); // Only run when debouncedTerm changes
 
   return (
     <div className="demo-section">
@@ -802,24 +904,35 @@ function SearchForm() {
 }
 
 // ===========================
-// LEVEL 7: FILE UPLOAD
+// LEVEL 7: FILE UPLOAD (Working with Files)
 // ===========================
+// Shows how to handle file uploads and create image previews.
 function FileUploadForm() {
+  // State to store the selected file object
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // State to store the image preview URL
   const [preview, setPreview] = useState("");
 
   const handleFileChange = (e) => {
+    // Files are in an array-like object, get the first one
     const file = e.target.files[0];
     setSelectedFile(file);
 
+    // Create preview only for images
     if (file && file.type.startsWith("image/")) {
+      // FileReader API - reads files and converts to data URL
       const reader = new FileReader();
+
+      // This callback runs when file is fully read
       reader.onloadend = () => {
-        setPreview(reader.result);
+        setPreview(reader.result); // Base64 string we can use in <img>
       };
+
+      // Start reading the file
       reader.readAsDataURL(file);
     } else {
-      setPreview("");
+      setPreview(""); // Clear preview if not an image
     }
   };
 
@@ -894,24 +1007,34 @@ function FileUploadForm() {
 }
 
 // ===========================
-// LEVEL 7: MULTI-STEP FORM
+// LEVEL 7: MULTI-STEP FORM (Wizard Pattern)
 // ===========================
+// Break long forms into multiple steps for better UX.
+// All data stored in one state object, but UI shows one step at a time.
 function MultiStepForm() {
+  // Track which step the user is on (1, 2, or 3)
   const [step, setStep] = useState(1);
+
+  // All form data in one object (data persists across steps)
   const [formData, setFormData] = useState({
+    // Step 1 fields
     firstName: "",
     lastName: "",
+    // Step 2 fields
     email: "",
     phone: "",
+    // Step 3 fields
     address: "",
     city: "",
   });
 
+  // Same change handler works for all steps
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Navigation functions
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
 
@@ -1040,20 +1163,28 @@ function MultiStepForm() {
 }
 
 // ===========================
-// LEVEL 7: DYNAMIC FIELDS
+// LEVEL 7: DYNAMIC FIELDS (Dynamic Arrays)
 // ===========================
+// Allows users to add/remove fields dynamically.
+// Useful for: lists of items, skills, phone numbers, etc.
 function DynamicForm() {
+  // Array of field objects, each with unique id and value
   const [fields, setFields] = useState([{ id: 1, value: "" }]);
 
+  // Add a new field to the array
   const addField = () => {
+    // Use Date.now() for unique id (timestamp in milliseconds)
     setFields([...fields, { id: Date.now(), value: "" }]);
   };
 
+  // Remove a field by filtering it out
   const removeField = (id) => {
     setFields(fields.filter((field) => field.id !== id));
   };
 
+  // Update a specific field's value
   const handleChange = (id, value) => {
+    // Map through fields, update only the one matching the id
     setFields(
       fields.map((field) => (field.id === id ? { ...field, value } : field))
     );
@@ -1074,16 +1205,20 @@ function DynamicForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="demo-form">
+        {/* Loop through all fields and render an input for each */}
         {fields.map((field, index) => (
+          // key={field.id} is crucial for React to track each field
           <div key={field.id} className="dynamic-field">
             <div className="form-group">
               <label>Item {index + 1}:</label>
               <input
                 value={field.value}
+                // Call handleChange with this specific field's id
                 onChange={(e) => handleChange(field.id, e.target.value)}
                 placeholder={`Enter item ${index + 1}`}
               />
             </div>
+            {/* Show remove button only if there's more than 1 field */}
             {fields.length > 1 && (
               <button
                 type="button"
