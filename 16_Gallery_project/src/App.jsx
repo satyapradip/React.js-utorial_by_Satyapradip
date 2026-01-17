@@ -14,7 +14,7 @@ const App = () => {
   const [loading, setLoading] = useState(false);
 
   // Async function to fetch image data from API
-  const getData = useCallback(async () => {
+  const getData = useCallback(async () => {  // useCallback to memoize function, preventing unnecessary re-creations, especially useful for useEffect dependencies  
     try {
       setLoading(true); // Show loading spinner
       // Make API call with current page number

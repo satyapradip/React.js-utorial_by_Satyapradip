@@ -15,7 +15,7 @@ const ImageCard = ({ image }) => {
     <a
       href={image.download_url}
       target="_blank"
-      rel="noopener noreferrer"
+      rel="noopener noreferrer" 
       className="block"
     >
       <div className="h-60 w-72 overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
