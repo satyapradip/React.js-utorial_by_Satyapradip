@@ -32,7 +32,7 @@ const App = () => {
       <Navbar2 />
 
       {/* Main content area - where routes will be rendered */}
-      <main className="flex-grow p-8">
+      <main className="grow p-8">
         {/* 
           ROUTES CONTAINER 
           All <Route> components must be inside a <Routes> component
